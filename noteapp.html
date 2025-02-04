@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Notes App</title>
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f4f4f4;
+            --text-primary: #000000;
+            --accent: #007bff;
+        }
+
+        body.dark-mode {
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --text-primary: #ffffff;
+            --accent: #6495ed;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .note-input {
+            width: 100%;
+            min-height: 150px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .btn {
+            padding: 8px 15px;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-dark-mode {
+            background-color: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--text-primary);
+        }
+
+        .notes-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .note-card {
+            background-color: var(--bg-secondary);
+            border-radius: 5px;
+            padding: 15px;
+            position: relative;
+        }
+
+        .note-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Notes App</h1>
+            <button id="dark-mode-toggle" class="btn btn-dark-mode">🌓</button>
+        </div>
+        
+        <input type="text" id="search-bar" class="search-bar" placeholder="Search notes...">
+        
+        <textarea id="note-input" class="note-input" placeholder="Write your note here..."></textarea>
+        
+        <button id="save-note" class="btn">Save Note</button>
+        
+        <div id="notes-list" class="notes-list"></div>
+    </div>
+
+    <script>
+        class NotesApp {
+            constructor() {
+                this.notesList = document.getElementById('notes-list');
+                this.noteInput = document.getElementById('note-input');
+                this.saveButton = document.getElementById('save-note');
+                this.searchBar = document.getElementById('search-bar');
+                this.darkModeToggle = document.getElementById('dark-mode-toggle');
+
+                this.notes = JSON.parse(localStorage.getItem('notes')) || [];
+
+                this.initEventListeners();
+                this.renderNotes();
+            }
+
+            initEventListeners() {
+                this.saveButton.addEventListener('click', () => this.addNote());
+                this.searchBar.addEventListener('input', () => this.searchNotes());
+                this.darkModeToggle.addEventListener('click', () => this.toggleDarkMode());
+            }
+
+            addNote() {
+                const noteText = this.noteInput.value.trim();
+                if (noteText) {
+                    const note = {
+                        id: Date.now(),
+                        text: noteText,
+                        createdAt: new Date().toLocaleString()
+                    };
+                    this.notes.push(note);
+                    this.saveNotes();
+                    this.noteInput.value = '';
+                }
+            }
+
+            renderNotes(filteredNotes = null) {
+                const notesToRender = filteredNotes || this.notes;
+                this.notesList.innerHTML = notesToRender.map(note => `
+                    <div class="note-card" data-id="${note.id}">
+                        <p>${note.text}</p>
+                        <small>${note.createdAt}</small>
+                        <div class="note-actions">
+                            <button onclick="app.editNote(${note.id})">Edit</button>
+                            <button onclick="app.deleteNote(${note.id})">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            searchNotes() {
+                const searchTerm = this.searchBar.value.toLowerCase();
+                const filteredNotes = this.notes.filter(note => 
+                    note.text.toLowerCase().includes(searchTerm)
+                );
+                this.renderNotes(filteredNotes);
+            }
+
+            deleteNote(id) {
+                this.notes = this.notes.filter(note => note.id !== id);
+                this.saveNotes();
+            }
+
+            editNote(id) {
+                const note = this.notes.find(n => n.id === id);
+                this.noteInput.value = note.text;
+                this.deleteNote(id);
+            }
+
+            saveNotes() {
+                localStorage.setItem('notes', JSON.stringify(this.notes));
+                this.renderNotes();
+            }
+
+            toggleDarkMode() {
+                document.body.classList.toggle('dark-mode');
+            }
+        }
+
+        const app = new NotesApp();
+    </script>
+</body>
+</html>
